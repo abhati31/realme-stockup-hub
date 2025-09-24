@@ -1,12 +1,115 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import Navigation from "@/components/layout/Navigation";
+import DistributorWelcome from "@/components/dashboard/DistributorWelcome";
+import OrderCreationOptions from "@/components/orders/OrderCreationOptions";
+import QuickEntry from "@/components/orders/QuickEntry";
+import BrowseProducts from "@/components/orders/BrowseProducts";
+import OrderReview from "@/components/orders/OrderReview";
+import OrderConfirmation from "@/components/orders/OrderConfirmation";
+
+type ViewType = 'dashboard' | 'orderOptions' | 'quickEntry' | 'browse' | 'review' | 'confirmation';
+
+interface OrderItem {
+  sku: string;
+  quantity: number;
+  name: string;
+  price: number;
+}
 
 const Index = () => {
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderNumber, setOrderNumber] = useState('');
+
+  const handleStartNewOrder = () => {
+    setCurrentView('orderOptions');
+  };
+
+  const handleSelectOrderOption = (option: 'quick' | 'upload' | 'browse') => {
+    if (option === 'quick') {
+      setCurrentView('quickEntry');
+    } else if (option === 'browse') {
+      setCurrentView('browse');
+    }
+    // Upload option would be implemented later
+  };
+
+  const handleProceedToReview = (items: OrderItem[]) => {
+    setOrderItems(items);
+    setCurrentView('review');
+  };
+
+  const handleConfirmOrder = (orderData: { items: OrderItem[]; deliveryDate: string; paymentMethod: string }) => {
+    // Generate order number
+    const orderNum = `#ORD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+    setOrderNumber(orderNum);
+    setCurrentView('confirmation');
+  };
+
+  const handleGoHome = () => {
+    setCurrentView('dashboard');
+    setOrderItems([]);
+    setOrderNumber('');
+  };
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
+      
+      case 'orderOptions':
+        return (
+          <OrderCreationOptions
+            onBack={() => setCurrentView('dashboard')}
+            onSelectOption={handleSelectOrderOption}
+          />
+        );
+      
+      case 'quickEntry':
+        return (
+          <QuickEntry
+            onBack={() => setCurrentView('orderOptions')}
+            onProceed={handleProceedToReview}
+          />
+        );
+      
+      case 'browse':
+        return (
+          <BrowseProducts
+            onBack={() => setCurrentView('orderOptions')}
+            onProceed={handleProceedToReview}
+          />
+        );
+      
+      case 'review':
+        return (
+          <OrderReview
+            items={orderItems}
+            onBack={() => setCurrentView(orderItems.length > 0 ? 'quickEntry' : 'orderOptions')}
+            onConfirm={handleConfirmOrder}
+          />
+        );
+      
+      case 'confirmation':
+        return (
+          <OrderConfirmation
+            orderNumber={orderNumber}
+            onGoHome={handleGoHome}
+            onTrackOrder={() => {/* Track order functionality */}}
+          />
+        );
+      
+      default:
+        return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderCurrentView()}
+      </main>
     </div>
   );
 };
