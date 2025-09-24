@@ -6,8 +6,16 @@ import QuickEntry from "@/components/orders/QuickEntry";
 import BrowseProducts from "@/components/orders/BrowseProducts";
 import OrderReview from "@/components/orders/OrderReview";
 import OrderConfirmation from "@/components/orders/OrderConfirmation";
+import InventoryDashboard from "@/components/inventory/InventoryDashboard";
+import ReceiveStock from "@/components/inventory/ReceiveStock";
+import DispatchOrders from "@/components/inventory/DispatchOrders";
+import TransferStock from "@/components/inventory/TransferStock";
+import LowStockAlerts from "@/components/inventory/LowStockAlerts";
 
-type ViewType = 'dashboard' | 'orderOptions' | 'quickEntry' | 'browse' | 'review' | 'confirmation';
+type ViewType = 'dashboard' | 'orderOptions' | 'quickEntry' | 'browse' | 'review' | 'confirmation' | 
+                'inventory' | 'receiveStock' | 'dispatchOrders' | 'transferStock' | 'lowStockAlerts';
+
+type UserRole = 'distributor' | 'admin';
 
 interface OrderItem {
   sku: string;
@@ -17,9 +25,18 @@ interface OrderItem {
 }
 
 const Index = () => {
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [userRole, setUserRole] = useState<UserRole>('distributor');
+  const [currentView, setCurrentView] = useState<ViewType>(userRole === 'admin' ? 'inventory' : 'dashboard');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderNumber, setOrderNumber] = useState('');
+
+  // Handle role switching
+  const handleRoleChange = (newRole: UserRole) => {
+    setUserRole(newRole);
+    setCurrentView(newRole === 'admin' ? 'inventory' : 'dashboard');
+    setOrderItems([]);
+    setOrderNumber('');
+  };
 
   const handleStartNewOrder = () => {
     setCurrentView('orderOptions');
@@ -47,66 +64,138 @@ const Index = () => {
   };
 
   const handleGoHome = () => {
-    setCurrentView('dashboard');
+    setCurrentView(userRole === 'admin' ? 'inventory' : 'dashboard');
     setOrderItems([]);
     setOrderNumber('');
   };
 
+  // Inventory handlers
+  const handleReceiveStock = () => setCurrentView('receiveStock');
+  const handleDispatchOrders = () => setCurrentView('dispatchOrders');
+  const handleTransferStock = () => setCurrentView('transferStock');
+  const handleViewLowStock = () => setCurrentView('lowStockAlerts');
+
+  const handleInventoryComplete = () => {
+    setCurrentView('inventory');
+  };
+
   const renderCurrentView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
-      
-      case 'orderOptions':
-        return (
-          <OrderCreationOptions
-            onBack={() => setCurrentView('dashboard')}
-            onSelectOption={handleSelectOrderOption}
-          />
-        );
-      
-      case 'quickEntry':
-        return (
-          <QuickEntry
-            onBack={() => setCurrentView('orderOptions')}
-            onProceed={handleProceedToReview}
-          />
-        );
-      
-      case 'browse':
-        return (
-          <BrowseProducts
-            onBack={() => setCurrentView('orderOptions')}
-            onProceed={handleProceedToReview}
-          />
-        );
-      
-      case 'review':
-        return (
-          <OrderReview
-            items={orderItems}
-            onBack={() => setCurrentView(orderItems.length > 0 ? 'quickEntry' : 'orderOptions')}
-            onConfirm={handleConfirmOrder}
-          />
-        );
-      
-      case 'confirmation':
-        return (
-          <OrderConfirmation
-            orderNumber={orderNumber}
-            onGoHome={handleGoHome}
-            onTrackOrder={() => {/* Track order functionality */}}
-          />
-        );
-      
-      default:
-        return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
+    // Distributor Views
+    if (userRole === 'distributor') {
+      switch (currentView) {
+        case 'dashboard':
+          return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
+        
+        case 'orderOptions':
+          return (
+            <OrderCreationOptions
+              onBack={() => setCurrentView('dashboard')}
+              onSelectOption={handleSelectOrderOption}
+            />
+          );
+        
+        case 'quickEntry':
+          return (
+            <QuickEntry
+              onBack={() => setCurrentView('orderOptions')}
+              onProceed={handleProceedToReview}
+            />
+          );
+        
+        case 'browse':
+          return (
+            <BrowseProducts
+              onBack={() => setCurrentView('orderOptions')}
+              onProceed={handleProceedToReview}
+            />
+          );
+        
+        case 'review':
+          return (
+            <OrderReview
+              items={orderItems}
+              onBack={() => setCurrentView(orderItems.length > 0 ? 'quickEntry' : 'orderOptions')}
+              onConfirm={handleConfirmOrder}
+            />
+          );
+        
+        case 'confirmation':
+          return (
+            <OrderConfirmation
+              orderNumber={orderNumber}
+              onGoHome={handleGoHome}
+              onTrackOrder={() => {/* Track order functionality */}}
+            />
+          );
+        
+        default:
+          return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
+      }
     }
+
+    // Admin Views
+    if (userRole === 'admin') {
+      switch (currentView) {
+        case 'inventory':
+          return (
+            <InventoryDashboard
+              onReceiveStock={handleReceiveStock}
+              onDispatchOrders={handleDispatchOrders}
+              onTransferStock={handleTransferStock}
+              onViewLowStock={handleViewLowStock}
+            />
+          );
+        
+        case 'receiveStock':
+          return (
+            <ReceiveStock
+              onBack={() => setCurrentView('inventory')}
+              onComplete={handleInventoryComplete}
+            />
+          );
+        
+        case 'dispatchOrders':
+          return (
+            <DispatchOrders
+              onBack={() => setCurrentView('inventory')}
+              onComplete={handleInventoryComplete}
+            />
+          );
+        
+        case 'transferStock':
+          return (
+            <TransferStock
+              onBack={() => setCurrentView('inventory')}
+              onComplete={handleInventoryComplete}
+            />
+          );
+        
+        case 'lowStockAlerts':
+          return (
+            <LowStockAlerts
+              onBack={() => setCurrentView('inventory')}
+              onReorder={handleInventoryComplete}
+            />
+          );
+        
+        default:
+          return (
+            <InventoryDashboard
+              onReceiveStock={handleReceiveStock}
+              onDispatchOrders={handleDispatchOrders}
+              onTransferStock={handleTransferStock}
+              onViewLowStock={handleViewLowStock}
+            />
+          );
+      }
+    }
+
+    return <DistributorWelcome onStartNewOrder={handleStartNewOrder} />;
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
+      <Navigation userRole={userRole} onRoleChange={handleRoleChange} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderCurrentView()}
       </main>
