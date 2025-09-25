@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Navigation from "@/components/layout/Navigation";
+import AdminSidebar from "@/components/layout/AdminSidebar";
 import DistributorWelcome from "@/components/dashboard/DistributorWelcome";
 import OrderCreationOptions from "@/components/orders/OrderCreationOptions";
 import QuickEntry from "@/components/orders/QuickEntry";
@@ -11,14 +12,20 @@ import ReceiveStock from "@/components/inventory/ReceiveStock";
 import DispatchOrders from "@/components/inventory/DispatchOrders";
 import TransferStock from "@/components/inventory/TransferStock";
 import LowStockAlerts from "@/components/inventory/LowStockAlerts";
+import InventoryDetails from "@/components/inventory/InventoryDetails";
 import OnboardingDashboard from "@/components/onboarding/OnboardingDashboard";
 import VendorRegistrationForm from "@/components/onboarding/VendorRegistrationForm";
 import ApplicationReview from "@/components/onboarding/ApplicationReview";
+import AdminOrderManagement from "@/components/orders/AdminOrderManagement";
+import DistributorsList from "@/components/distributors/DistributorsList";
+import SalesAnalytics from "@/components/analytics/SalesAnalytics";
+import ComplianceDashboard from "@/components/compliance/ComplianceDashboard";
+import AccessControl from "@/components/access/AccessControl";
 
 type ViewType = 'dashboard' | 'orderOptions' | 'quickEntry' | 'browse' | 'review' | 'confirmation' | 
-                'inventory' | 'receiveStock' | 'dispatchOrders' | 'transferStock' | 'lowStockAlerts' |
+                'inventory' | 'receiveStock' | 'dispatchOrders' | 'transferStock' | 'lowStockAlerts' | 'inventoryDetails' |
                 'onboarding' | 'vendorRegistration' | 'applicationReview' | 'analytics' | 'settings' | 
-                'distributors' | 'compliance' | 'orders';
+                'distributors' | 'compliance' | 'access' | 'orders';
 
 type UserRole = 'distributor' | 'admin';
 
@@ -83,6 +90,7 @@ const Index = () => {
   const handleInventoryComplete = () => {
     setCurrentView('inventory');
   };
+  const handleViewInventoryDetails = () => setCurrentView('inventoryDetails');
 
   // Onboarding handlers
   const handleViewApplication = (id: string) => setCurrentView('applicationReview');
@@ -91,6 +99,7 @@ const Index = () => {
     console.log('Application submitted:', data);
     setCurrentView('onboarding');
   };
+  const handleStartNewApplication = () => setCurrentView('vendorRegistration');
 
   // View change handler
   const handleViewChange = (view: string) => {
@@ -161,7 +170,12 @@ const Index = () => {
               onDispatchOrders={handleDispatchOrders}
               onTransferStock={handleTransferStock}
               onViewLowStock={handleViewLowStock}
+              onViewInventoryDetails={handleViewInventoryDetails}
             />
+          );
+        case 'inventoryDetails':
+          return (
+            <InventoryDetails onBack={() => setCurrentView('inventory')} />
           );
         
         case 'receiveStock':
@@ -201,7 +215,32 @@ const Index = () => {
             <OnboardingDashboard
               onViewApplication={handleViewApplication}
               onCreateAccount={handleCreateAccount}
+              onStartNewApplication={handleStartNewApplication}
             />
+          );
+
+        case 'distributors':
+          return (
+            <DistributorsList />
+          );
+
+        case 'orders':
+          return (
+            <AdminOrderManagement />
+          );
+
+        case 'analytics':
+          return (
+            <SalesAnalytics />
+          );
+
+        case 'compliance':
+          return (
+            <ComplianceDashboard />
+          );
+        case 'access':
+          return (
+            <AccessControl />
           );
         
         case 'vendorRegistration':
@@ -245,9 +284,22 @@ const Index = () => {
         currentView={currentView}
         onViewChange={handleViewChange}
       />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderCurrentView()}
-      </main>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {userRole === 'admin' ? (
+          <div className="flex gap-6">
+            <div className="hidden md:block shrink-0">
+              <AdminSidebar currentView={currentView} onViewChange={handleViewChange} />
+            </div>
+            <main className="flex-1 py-8">
+              {renderCurrentView()}
+            </main>
+          </div>
+        ) : (
+          <main className="py-8">
+            {renderCurrentView()}
+          </main>
+        )}
+      </div>
     </div>
   );
 };

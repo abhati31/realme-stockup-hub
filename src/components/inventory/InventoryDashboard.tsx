@@ -23,13 +23,15 @@ interface InventoryDashboardProps {
   onDispatchOrders: () => void;
   onTransferStock: () => void;
   onViewLowStock: () => void;
+  onViewInventoryDetails?: () => void;
 }
 
 const InventoryDashboard = ({ 
   onReceiveStock, 
   onDispatchOrders, 
   onTransferStock, 
-  onViewLowStock 
+  onViewLowStock,
+  onViewInventoryDetails,
 }: InventoryDashboardProps) => {
   const lowStockCount = 5;
   
@@ -79,7 +81,7 @@ const InventoryDashboard = ({
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-card to-card/50 hover:shadow-md transition-all duration-200">
+        <Card className="bg-gradient-to-br from-card to-card/50 hover:shadow-md transition-all duration-200 cursor-pointer" onClick={onViewInventoryDetails}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total SKUs</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />

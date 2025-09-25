@@ -35,6 +35,7 @@ interface OnboardingApplication {
 interface OnboardingDashboardProps {
   onViewApplication: (id: string) => void;
   onCreateAccount: (id: string) => void;
+  onStartNewApplication?: () => void;
 }
 
 const mockApplications: OnboardingApplication[] = [
@@ -76,7 +77,7 @@ const mockApplications: OnboardingApplication[] = [
   }
 ];
 
-const OnboardingDashboard = ({ onViewApplication, onCreateAccount }: OnboardingDashboardProps) => {
+const OnboardingDashboard = ({ onViewApplication, onCreateAccount, onStartNewApplication }: OnboardingDashboardProps) => {
   const [applications, setApplications] = useState<OnboardingApplication[]>(mockApplications);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -130,7 +131,7 @@ const OnboardingDashboard = ({ onViewApplication, onCreateAccount }: OnboardingD
             Manage distributor applications and onboarding process
           </p>
         </div>
-        <Button onClick={() => {}} className="flex items-center gap-2">
+        <Button onClick={() => onStartNewApplication?.()} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
           New Application
         </Button>

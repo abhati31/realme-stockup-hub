@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Menu, X, Package, BarChart3, Users, Settings, Warehouse, UserCog, UserPlus, ClipboardList, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import realmeImage from "@/assets/realme-logo.png";
+import Logo from "@/components/branding/Logo";
 
 interface NavigationProps {
   userRole?: 'distributor' | 'admin';
@@ -20,10 +20,11 @@ const Navigation = ({ userRole = 'distributor', onRoleChange, currentView, onVie
     { icon: Settings, label: "Settings", key: "settings" },
   ];
 
+  // Admin menu is moved to left sidebar; keep for mobile fallback
   const adminMenuItems = [
-    { icon: Warehouse, label: "Inventory Management", key: "inventory" },
-    { icon: Package, label: "Order Processing", key: "orders" },
-    { icon: UserPlus, label: "Vendor Onboarding", key: "onboarding" },
+    { icon: Warehouse, label: "Inventory", key: "inventory" },
+    { icon: Package, label: "Orders", key: "orders" },
+    { icon: UserPlus, label: "Onboarding", key: "onboarding" },
     { icon: Users, label: "Distributors", key: "distributors" },
     { icon: ClipboardList, label: "Compliance", key: "compliance" },
     { icon: TrendingUp, label: "Analytics", key: "analytics" },
@@ -37,7 +38,7 @@ const Navigation = ({ userRole = 'distributor', onRoleChange, currentView, onVie
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-4">
-            <img src={realmeImage} alt="Realme" className="h-8 w-auto" />
+            <Logo className="h-8 w-auto" />
             <span className="ml-3 text-xl font-bold text-foreground">
               India Portal
             </span>
@@ -47,19 +48,23 @@ const Navigation = ({ userRole = 'distributor', onRoleChange, currentView, onVie
           </div>
 
           <div className="hidden md:flex items-center space-x-1">
-            {menuItems.map((item) => (
-              <Button
-                key={item.label}
-                variant={currentView === item.key ? "default" : "ghost"}
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={() => onViewChange?.(item.key)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            ))}
-            
+            {userRole === 'distributor' && (
+              <>
+                {menuItems.map((item) => (
+                  <Button
+                    key={item.label}
+                    variant={currentView === item.key ? "default" : "ghost"}
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => onViewChange?.(item.key)}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Button>
+                ))}
+              </>
+            )}
+
             {/* Role Switcher */}
             <Button
               variant="outline"
