@@ -11,9 +11,14 @@ import ReceiveStock from "@/components/inventory/ReceiveStock";
 import DispatchOrders from "@/components/inventory/DispatchOrders";
 import TransferStock from "@/components/inventory/TransferStock";
 import LowStockAlerts from "@/components/inventory/LowStockAlerts";
+import OnboardingDashboard from "@/components/onboarding/OnboardingDashboard";
+import VendorRegistrationForm from "@/components/onboarding/VendorRegistrationForm";
+import ApplicationReview from "@/components/onboarding/ApplicationReview";
 
 type ViewType = 'dashboard' | 'orderOptions' | 'quickEntry' | 'browse' | 'review' | 'confirmation' | 
-                'inventory' | 'receiveStock' | 'dispatchOrders' | 'transferStock' | 'lowStockAlerts';
+                'inventory' | 'receiveStock' | 'dispatchOrders' | 'transferStock' | 'lowStockAlerts' |
+                'onboarding' | 'vendorRegistration' | 'applicationReview' | 'analytics' | 'settings' | 
+                'distributors' | 'compliance' | 'orders';
 
 type UserRole = 'distributor' | 'admin';
 
@@ -77,6 +82,19 @@ const Index = () => {
 
   const handleInventoryComplete = () => {
     setCurrentView('inventory');
+  };
+
+  // Onboarding handlers
+  const handleViewApplication = (id: string) => setCurrentView('applicationReview');
+  const handleCreateAccount = (id: string) => console.log('Creating account for', id);
+  const handleOnboardingSubmit = (data: any) => {
+    console.log('Application submitted:', data);
+    setCurrentView('onboarding');
+  };
+
+  // View change handler
+  const handleViewChange = (view: string) => {
+    setCurrentView(view as ViewType);
   };
 
   const renderCurrentView = () => {
@@ -178,6 +196,32 @@ const Index = () => {
             />
           );
         
+        case 'onboarding':
+          return (
+            <OnboardingDashboard
+              onViewApplication={handleViewApplication}
+              onCreateAccount={handleCreateAccount}
+            />
+          );
+        
+        case 'vendorRegistration':
+          return (
+            <VendorRegistrationForm
+              onBack={() => setCurrentView('onboarding')}
+              onSubmit={handleOnboardingSubmit}
+            />
+          );
+        
+        case 'applicationReview':
+          return (
+            <ApplicationReview
+              onBack={() => setCurrentView('onboarding')}
+              onApprove={() => setCurrentView('onboarding')}
+              onReject={() => setCurrentView('onboarding')}
+              onRequestInfo={() => setCurrentView('onboarding')}
+            />
+          );
+        
         default:
           return (
             <InventoryDashboard
@@ -195,7 +239,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation userRole={userRole} onRoleChange={handleRoleChange} />
+      <Navigation 
+        userRole={userRole} 
+        onRoleChange={handleRoleChange}
+        currentView={currentView}
+        onViewChange={handleViewChange}
+      />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderCurrentView()}
       </main>

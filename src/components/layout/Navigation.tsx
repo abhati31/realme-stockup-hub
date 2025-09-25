@@ -1,24 +1,33 @@
 import { useState } from "react";
-import { Menu, X, Package, BarChart3, Users, Settings, Warehouse, UserCog } from "lucide-react";
+import { Menu, X, Package, BarChart3, Users, Settings, Warehouse, UserCog, UserPlus, ClipboardList, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import realmeImage from "@/assets/realme-logo.png";
 
-const Navigation = ({ userRole = 'distributor', onRoleChange }: { userRole?: 'distributor' | 'admin', onRoleChange?: (role: 'distributor' | 'admin') => void }) => {
+interface NavigationProps {
+  userRole?: 'distributor' | 'admin';
+  onRoleChange?: (role: 'distributor' | 'admin') => void;
+  currentView?: string;
+  onViewChange?: (view: string) => void;
+}
+
+const Navigation = ({ userRole = 'distributor', onRoleChange, currentView, onViewChange }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const distributorMenuItems = [
-    { icon: Package, label: "Order Management", path: "/", active: true },
-    { icon: BarChart3, label: "Analytics", path: "/analytics", active: false },
-    { icon: Settings, label: "Settings", path: "/settings", active: false },
+    { icon: Package, label: "Order Management", key: "dashboard" },
+    { icon: BarChart3, label: "Analytics", key: "analytics" },
+    { icon: Settings, label: "Settings", key: "settings" },
   ];
 
   const adminMenuItems = [
-    { icon: Warehouse, label: "Inventory Management", path: "/inventory", active: true },
-    { icon: Package, label: "Order Processing", path: "/orders", active: false },
-    { icon: Users, label: "Distributors", path: "/distributors", active: false },
-    { icon: BarChart3, label: "Analytics", path: "/analytics", active: false },
-    { icon: Settings, label: "Settings", path: "/settings", active: false },
+    { icon: Warehouse, label: "Inventory Management", key: "inventory" },
+    { icon: Package, label: "Order Processing", key: "orders" },
+    { icon: UserPlus, label: "Vendor Onboarding", key: "onboarding" },
+    { icon: Users, label: "Distributors", key: "distributors" },
+    { icon: ClipboardList, label: "Compliance", key: "compliance" },
+    { icon: TrendingUp, label: "Analytics", key: "analytics" },
+    { icon: Settings, label: "Settings", key: "settings" },
   ];
 
   const menuItems = userRole === 'admin' ? adminMenuItems : distributorMenuItems;
@@ -41,9 +50,10 @@ const Navigation = ({ userRole = 'distributor', onRoleChange }: { userRole?: 'di
             {menuItems.map((item) => (
               <Button
                 key={item.label}
-                variant={item.active ? "default" : "ghost"}
+                variant={currentView === item.key ? "default" : "ghost"}
                 size="sm"
                 className="flex items-center gap-2"
+                onClick={() => onViewChange?.(item.key)}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
@@ -82,9 +92,10 @@ const Navigation = ({ userRole = 'distributor', onRoleChange }: { userRole?: 'di
             {menuItems.map((item) => (
               <Button
                 key={item.label}
-                variant={item.active ? "default" : "ghost"}
+                variant={currentView === item.key ? "default" : "ghost"}
                 size="sm"
                 className="w-full justify-start gap-2"
+                onClick={() => onViewChange?.(item.key)}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
