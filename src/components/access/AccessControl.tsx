@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Download, Upload } from "lucide-react";
-import { MODULES, RbacConfig, RoleConfig, loadRbac, saveRbac } from "@/lib/rbac";
+import { MODULES, RbacConfig, loadRbac, saveRbac } from "@/lib/rbac";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const roles = [
   { key: 'distributor', name: 'Distributor', perms: ['Place Orders', 'View Own Orders'] },
@@ -22,12 +24,18 @@ const users = [
   { id: 'USR-001', name: 'Amit Sharma', email: 'amit@company.com', role: 'Sales Admin', mfa: true, lastActive: '2025-09-20' },
   { id: 'USR-002', name: 'Neha Gupta', email: 'neha@company.com', role: 'Inventory Manager', mfa: false, lastActive: '2025-09-22' },
   { id: 'USR-003', name: 'Rahul Verma', email: 'rahul@company.com', role: 'Finance', mfa: true, lastActive: '2025-09-24' },
+  { id: 'USR-004', name: 'Pooja Saini', email: 'pooja@company.com', role: 'Executive', mfa: true, lastActive: '2025-09-22' },
+  { id: 'USR-005', name: 'Anuj Mehta', email: 'anuj@company.com', role: 'System Admin', mfa: true, lastActive: '2025-09-25' },
+  { id: 'DUSR-001', name: 'Sanjay Rao', email: 'sanjay@sharma.co', role: 'Distributor Admin', mfa: true, lastActive: '2025-09-18' },
+  { id: 'DUSR-002', name: 'Priyanka Iyer', email: 'priyanka@mumbai-elec.in', role: 'Distributor Staff', mfa: false, lastActive: '2025-09-21' },
 ];
 
 const AccessControl = () => {
   const [cfg, setCfg] = useState<RbacConfig>(loadRbac());
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleKey, setNewRoleKey] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>(cfg.roles[0]?.key || "");
+  const { toast } = useToast();
 
   const toggle = (roleIndex: number, moduleKey: string, field: 'view' | 'edit' | 'approve') => {
     setCfg(prev => {
@@ -50,7 +58,14 @@ const AccessControl = () => {
     setNewRoleKey(""); setNewRoleName("");
   };
 
-  const removeRole = (key: string) => setCfg(prev => ({ ...prev, roles: prev.roles.filter(r => r.key !== key) }));
+  const removeRole = (key: string) => {
+    setCfg(prev => {
+      const roles = prev.roles.filter(r => r.key !== key);
+      const next = { ...prev, roles };
+      if (selectedRole === key) setSelectedRole(roles[0]?.key || "");
+      return next;
+    });
+  };
 
   const downloadJson = () => {
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
@@ -67,7 +82,12 @@ const AccessControl = () => {
     reader.readAsText(file);
   };
 
-  const persist = () => saveRbac(cfg);
+  const persist = () => {
+    saveRbac(cfg);
+    toast({ description: "Access configuration saved." });
+  };
+
+  const roleIndex = useMemo(() => cfg.roles.findIndex(r => r.key === selectedRole), [cfg.roles, selectedRole]);
 
   return (
     <div className="space-y-6">
@@ -76,70 +96,88 @@ const AccessControl = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>User Management & Access Control</CardTitle>
-              <CardDescription>Roles, permissions, MFA policy, and audit considerations</CardDescription>
+              <CardDescription>Configure roles and permissions. Save or export the JSON config for file-based management.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={persist}>Save</Button>
+              <Button variant="default" size="sm" onClick={persist}>Save</Button>
               <Button variant="outline" size="sm" onClick={downloadJson}><Download className="h-4 w-4 mr-2" />Export</Button>
-              <label className="inline-flex items-center gap-2 text-sm px-3 py-2 border rounded-md cursor-pointer">
-                <Upload className="h-4 w-4" /> Import
-                <input type="file" accept="application/json" className="hidden" onChange={importJson} />
+              <label className="inline-flex items-center gap-2 text-sm px-3 py-2 border rounded-md cursor-pointer bg-card">
+                <Upload className="h-4 w-4" /> Import<input type="file" accept="application/json" className="hidden" onChange={importJson} />
               </label>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle>Roles & Permissions</CardTitle><CardDescription>predefined roles</CardDescription></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle>Roles</CardTitle>
+            <CardDescription>Create, select a role, then edit its permissions below.</CardDescription>
+          </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Permissions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cfg.roles.map((r, rIdx) => (
-                  <TableRow key={r.key}>
-                    <TableCell className="font-medium align-top w-48">
-                      <div className="flex items-center justify-between gap-2">
-                        <span>{r.name}</span>
-                        <Button variant="ghost" size="sm" onClick={() => removeRole(r.key)}>Remove</Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground">{r.key}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {MODULES.map(m => (
-                          <div key={m.key} className="border rounded-md p-2">
-                            <div className="font-medium text-xs mb-1">{m.label}</div>
-                            <div className="flex items-center gap-4">
-                              <label className="flex items-center gap-2 text-xs"><Checkbox checked={cfg.roles[rIdx].permissions[m.key].view} onCheckedChange={() => toggle(rIdx, m.key, 'view')} />View</label>
-                              <label className="flex items-center gap-2 text-xs"><Checkbox checked={cfg.roles[rIdx].permissions[m.key].edit} onCheckedChange={() => toggle(rIdx, m.key, 'edit')} />Edit</label>
-                              <label className="flex items-center gap-2 text-xs"><Checkbox checked={cfg.roles[rIdx].permissions[m.key].approve} onCheckedChange={() => toggle(rIdx, m.key, 'approve')} />Approve</label>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-              <Input placeholder="Role key (e.g., sales_ops)" value={newRoleKey} onChange={(e) => setNewRoleKey(e.target.value)} />
-              <Input placeholder="Role name" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} />
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Input placeholder="Role key (e.g., sales_ops)" value={newRoleKey} onChange={(e) => setNewRoleKey(e.target.value)} />
+                <Input placeholder="Role name" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} />
+              </div>
               <Button size="sm" onClick={addRole}>Add Role</Button>
+            </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Select role to edit</div>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger><SelectValue placeholder="Choose role" /></SelectTrigger>
+                  <SelectContent>
+                    {cfg.roles.map(r => (<SelectItem key={r.key} value={r.key}>{r.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-right">
+                <Button variant="outline" size="sm" onClick={() => selectedRole && removeRole(selectedRole)}>Remove Selected</Button>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle>Internal Users</CardTitle><CardDescription>MFA & last active</CardDescription></CardHeader>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle>Permissions Matrix</CardTitle>
+            <CardDescription>Toggle permissions for the selected role</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-48">Module</TableHead>
+                    <TableHead className="text-center w-24">View</TableHead>
+                    <TableHead className="text-center w-24">Edit</TableHead>
+                    <TableHead className="text-center w-28">Approve</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {MODULES.map(m => (
+                    <TableRow key={m.key}>
+                      <TableCell className="font-medium">{m.label}</TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox checked={roleIndex >= 0 && cfg.roles[roleIndex].permissions[m.key].view} onCheckedChange={() => roleIndex >= 0 && toggle(roleIndex, m.key, 'view')} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox checked={roleIndex >= 0 && cfg.roles[roleIndex].permissions[m.key].edit} onCheckedChange={() => roleIndex >= 0 && toggle(roleIndex, m.key, 'edit')} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox checked={roleIndex >= 0 && cfg.roles[roleIndex].permissions[m.key].approve} onCheckedChange={() => roleIndex >= 0 && toggle(roleIndex, m.key, 'approve')} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-3">
+          <CardHeader className="pb-2"><CardTitle>Internal & Distributor Users</CardTitle><CardDescription>MFA & last active</CardDescription></CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
